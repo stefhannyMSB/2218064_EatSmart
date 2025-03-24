@@ -280,7 +280,8 @@ const itemVertical = StyleSheet.create({
 
 const itemHorizontal = StyleSheet.create({
   cardItem: {
-    width: 280,
+    width: 280, 
+    
   },
   cardImage: {
     width: '100%',
