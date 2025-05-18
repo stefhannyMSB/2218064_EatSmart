@@ -1,229 +1,104 @@
-import React from 'react';
-import {
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-  Image,
-  ImageBackground,
-} from 'react-native';
-import {Element3, Receipt21, Clock, Message} from 'iconsax-react-native';
-import {fontType, colors} from './src/theme';
+import React, { useState } from 'react';
+import {ScrollView, StyleSheet,  Text, View, Image, ImageBackground, TextInput, Pressable, TouchableOpacity, FlatList} from 'react-native';
+import {Element3, Receipt21, Clock, Message, SearchNormal, Notification} from 'iconsax-react-native';import { fontType, colors } from './src/theme';
+import { CategoryList, BlogList } from './src/data';
+import { ListHorizontal, ItemSmall } from './src/components';
 
 export default function App() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}> EATSMART </Text>
-        <Element3 color={colors.black()} variant="Linear" size={24} />
+        <Notification color={colors.black()} variant="Linear" size={24} />
+      </View>
+      <View style={searchBar.container}>
+           <TextInput
+                    style={searchBar.input}
+                    placeholder="Search"
+                />
+           <Pressable style={searchBar.button}>
+                    <SearchNormal size={20} color={colors.white()} />
+         </Pressable>
       </View>
       <View style={styles.listCategory}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <View style={{...category.item, marginLeft: 24}}>
-            <Text style={{...category.title, color: colors.blue()}}>
-              Recomendation
-            </Text>
-          </View>
-          <View style={category.item}>
-            <Text style={category.title}>Diet Sehat</Text>
-          </View>
-          <View style={category.item}>
-            <Text style={category.title}>Flu</Text>
-          </View>
-          <View style={category.item}>
-            <Text style={category.title}>Batuk</Text>
-          </View>
-        </ScrollView>
+        <FlatListCategory />
       </View>
       <ListBlog />
     </View>
   );
 }
-const ListBlog = () => {
+
+
+const searchBar = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    marginHorizontal: 24,
+    marginVertical: 10,
+    alignItems: 'center',
+    backgroundColor: colors.white(),
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    elevation: 2,
+  },
+  input: {
+    flex: 1,
+    fontFamily: fontType['Pjs-Regular'],
+    fontSize: 14,
+    color: colors.black(),
+  },
+  button: {
+    backgroundColor: colors.blue(),
+    padding: 10,
+    borderRadius: 8,
+  },
+});
+
+const ItemCategory = ({item, onPress, color}) => {
   return (
-    <ScrollView>
+    <TouchableOpacity onPress={onPress}>
+      <View style={category.item}>
+        <Text style={{...category.title, color}}>{item.categoryName}</Text>
+      </View>
+    </TouchableOpacity>
+  );
+};
+
+const FlatListCategory = () => {
+  const [selected, setSelected] = useState(1);
+  const renderItem = ({item}) => {
+    const color = item.id === selected ? colors.blue() : colors.grey();
+    return (
+      <ItemCategory
+        item={item}
+        onPress={() => setSelected(item.id)}
+        color={color}
+      />
+    );
+  };
+  return (
+    <FlatList
+      data={CategoryList}
+      keyExtractor={item => item.id}
+      renderItem={item => renderItem({...item})}
+      ItemSeparatorComponent={() => <View style={{width: 10}} />}
+      contentContainerStyle={{paddingHorizontal: 24}}
+      horizontal
+      showsHorizontalScrollIndicator={false}
+    />
+  );
+};
+
+const ListBlog = () => {
+  const horizontalData = BlogList.slice(0, 5);
+  const verticalData = BlogList.slice(5);
+  return (
+    <ScrollView showsVerticalScrollIndicator={false}>
       <View style={styles.listBlog}>
-        <ScrollView
-          showsHorizontalScrollIndicator={false}
-          horizontal
-          contentContainerStyle={{gap: 15}}>
-          <View style={{...itemHorizontal.cardItem, marginLeft: 24}}>
-            <ImageBackground
-              style={itemHorizontal.cardImage}
-              resizeMode="cover"
-              imageStyle={{borderRadius: 15}}
-              source={{
-                uri: 'https://tse2.mm.bing.net/th?id=OIP.i5Yx6SWyxlzFSg_-hpg2uQHaFi&pid=Api&P=0&h=180',
-              }}>
-              <View style={itemHorizontal.cardContent}>
-                <View style={itemHorizontal.cardInfo}>
-                  <Text style={itemHorizontal.cardTitle}>
-                    Healthy Food
-                  </Text>
-                </View>
-                <View>
-                  <View style={itemHorizontal.cardIcon}>
-                    <Receipt21
-                      color={colors.white()}
-                      variant="Linear"
-                      size={20}
-                    />
-                  </View>
-                </View>
-              </View>
-            </ImageBackground>
-          </View>
-          <View style={itemHorizontal.cardItem}>
-            <ImageBackground
-              style={itemHorizontal.cardImage}
-              resizeMode="cover"
-              imageStyle={{borderRadius: 15}}
-              source={{
-                uri: 'https://www.astronauts.id/blog/wp-content/uploads/2022/10/Ikuti-Resep-Menu-Diet-Sehat-30-Hari-Ini-yang-Aman-dan-Enak-1024x683.jpg',
-              }}>
-              <View style={itemHorizontal.cardContent}>
-                <View style={itemHorizontal.cardInfo}>
-                  <Text style={itemHorizontal.cardTitle}>Diet Sehat</Text>
-                </View>
-                <View>
-                  <View style={itemHorizontal.cardIcon}>
-                    <Receipt21
-                      color={colors.white()}
-                      variant="Linear"
-                      size={20}
-                    />
-                  </View>
-                </View>
-              </View>
-            </ImageBackground>
-          </View>
-          <View style={itemHorizontal.cardItem}>
-            <ImageBackground
-              style={itemHorizontal.cardImage}
-              resizeMode="cover"
-              imageStyle={{borderRadius: 15}}
-              source={{
-                uri: 'https://asset.kompas.com/crops/8i4IWzWN2Qu9FRNGNhfvHu60q1I=/0x457:4500x3457/750x500/data/photo/2022/10/25/63574d0f01f62.jpg',
-              }}>
-              <View style={itemHorizontal.cardContent}>
-                <View style={itemHorizontal.cardInfo}>
-                  <Text style={itemHorizontal.cardTitle}>Hidup Sehat</Text>
-                </View>
-                <View>
-                  <View style={itemHorizontal.cardIcon}>
-                    <Receipt21
-                      color={colors.white()}
-                      variant="Linear"
-                      size={20}
-                    />
-                  </View>
-                </View>
-              </View>
-            </ImageBackground>
-          </View>
-        </ScrollView>
-        <View style={itemVertical.listCard}>
-          <View style={itemVertical.cardItem}>
-            <Image
-              style={itemVertical.cardImage}
-              source={{
-                uri: 'https://tse4.mm.bing.net/th?id=OIP.u1hfDbji5A_VudzjBDBjbQHaEK&pid=Api&P=0&h=180',
-              }}
-            />
-            <View style={itemVertical.cardContent}>
-              <View
-                style={{
-                  flexDirection: 'row',
-                  justifyContent: 'space-between',
-                }}>
-                <View style={{gap: 5, width: '70%'}}>
-                  <Text style={itemVertical.cardTitle}>Asam Lambung</Text>
-                  <Text style={itemVertical.cardTitle}>Terjadi ketika cairan lambung naik ke kerongkongan</Text>
-                </View>
-              </View>
-            </View>
-          </View>
-          
-          <View style={itemVertical.cardItem}>
-            <Image
-              style={itemVertical.cardImage}
-              source={{
-                uri: 'https://infotangerang.co.id/wp-content/uploads/2023/03/Illustrasi-Diare.jpg',
-              }}
-            />
-            <View style={itemVertical.cardContent}>
-              <View
-                style={{
-                  flexDirection: 'row',
-                  justifyContent: 'space-between',
-                }}>
-                <View style={{gap: 5, width: '70%'}}>
-                  <Text style={itemVertical.cardTitle}>Diare</Text>
-                  <Text style={itemVertical.cardTitle}>kondisi ketika buang air besar menjadi lebih sering , biasanya disebabkan oleh infeksi</Text>
-                </View>
-              </View>
-            </View>
-          </View>
-          <View style={itemVertical.cardItem}>
-            <Image
-              style={itemVertical.cardImage}
-              source={{
-                uri: 'https://png.pngtree.com/png-vector/20221227/ourlarge/pngtree-measuring-blood-pressure-and-healthcare-concept-png-image_6540079.png',
-              }}
-            />
-            <View style={itemVertical.cardContent}>
-              <View
-                style={{
-                  flexDirection: 'row',
-                  justifyContent: 'space-between',
-                }}>
-                <View style={{gap: 5, width: '70%'}}>
-                  <Text style={itemVertical.cardTitle}>Darah Rendah</Text>
-                  <Text style={itemVertical.cardTitle}>kondisi ketika tekanan darah turun terlalu rendah, yang bisa menyebabkan pusing</Text>
-                </View>
-              </View>
-            </View>
-          </View>
-          <View style={itemVertical.cardItem}>
-            <Image
-              style={itemVertical.cardImage}
-              source={{
-                uri: 'https://tse1.mm.bing.net/th?id=OIP.pDjiylE8Ea9iJrdWCMwOzgHaE5&pid=Api&P=0&h=180',
-              }}
-            />
-            <View style={itemVertical.cardContent}>
-              <View
-                style={{
-                  flexDirection: 'row',
-                  justifyContent: 'space-between',
-                }}>
-                <View style={{gap: 5, width: '70%'}}>
-                  <Text style={itemVertical.cardTitle}>Obesitas</Text>
-                  <Text style={itemVertical.cardTitle}>kondisi kelebihan berat badan yang disebabkan oleh penumpukan lemak berlebih dalam tubuh</Text>
-                </View>
-              </View>
-            </View>
-          </View>
-          <View style={itemVertical.cardItem}>
-            <Image
-              style={itemVertical.cardImage}
-              source={{
-                uri: 'https://static.republika.co.id/uploads/images/inpicture_slide/polifagia-gejala-awal-diabetes_221206220618-113.jpg',
-              }}
-            />
-            <View style={itemVertical.cardContent}>
-              <View
-                style={{
-                  flexDirection: 'row',
-                  justifyContent: 'space-between',
-                }}>
-                <View style={{gap: 5, width: '70%'}}>
-                  <Text style={itemVertical.cardTitle}>Diabetes</Text>
-                  <Text style={itemVertical.cardTitle}>penyakit yang terjadi ketika tubuh tidak dapat mengatur kadar gula darah dengan baik</Text>
-                </View>
-              </View>
-            </View>
-          </View>
+        <ListHorizontal data={horizontalData} />
+        <View style={styles.listCard}>
+          {verticalData.map((item, index) => (
+            <ItemSmall item={item} key={index} />
+          ))}
         </View>
       </View>
     </ScrollView>
@@ -280,8 +155,7 @@ const itemVertical = StyleSheet.create({
 
 const itemHorizontal = StyleSheet.create({
   cardItem: {
-    width: 280, 
-    
+    width: 280,
   },
   cardImage: {
     width: '100%',
@@ -321,7 +195,7 @@ const itemHorizontal = StyleSheet.create({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor:'#edf0ef',
+    backgroundColor:'#BDB76B',
   },
   header: {
     paddingHorizontal: 24,
@@ -353,13 +227,14 @@ const category = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 25,
     alignItems: 'center',
-    backgroundColor: colors.grey(0.08),
+    backgroundColor: '#8FBC8F',
     marginHorizontal: 5,
   },
   title: {
     fontFamily: fontType['Pjs-SemiBold'],
     fontSize: 14,
     lineHeight: 18,
-    color: colors.grey(),
+    color: '#8FBC8F',
   },
 });
+
