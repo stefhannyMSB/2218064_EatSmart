@@ -6,58 +6,71 @@ import {
   View,
   TouchableOpacity,
 } from 'react-native';
-import {Setting2} from 'iconsax-react-native';
+import {Setting2, Edit} from 'iconsax-react-native'; // digabung
 import FastImage from '@d11/react-native-fast-image';
 import {BlogList} from '../../data';
 import {ItemSmall} from '../../components';
 import {fontType, colors} from '../../theme';
+import {useNavigation} from '@react-navigation/native'; // tidak perlu diubah
 
 const data = BlogList.slice(5);
 
-const Profile = () => (
-  <View style={styles.container}>
-    {/* Header */}
-    <View style={styles.header}>
-      <Text style={styles.title}>MY PROFILE</Text>
-      <Setting2 color={colors.black()} variant="Linear" size={24} />
-    </View>
+const Profile = () => {
+  const navigation = useNavigation(); // dipindah ke atas return
 
-    {/* Content */}
-    <ScrollView
-      showsVerticalScrollIndicator={false}
-      contentContainerStyle={styles.scrollContent}>
+  return (
+    <View style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.title}>MY PROFILE</Text>
+        <Setting2 color={colors.black()} variant="Linear" size={24} />
+      </View>
 
-      {/* Profile Card */}
-      <View style={styles.profileCard}>
-        <FastImage
-          style={styles.pic}
-          source={{
-            uri: 'https://png.pngtree.com/png-clipart/20221012/original/pngtree-doctor-woman-dokter-perempuan-indonesia-wanita-png-image_8679062.png',
-            headers: {Authorization: 'someAuthToken'},
-            priority: FastImage.priority.high,
-          }}
-          resizeMode={FastImage.resizeMode.cover}
-        />
-        <View style={styles.textCenter}>
-          <Text style={styles.welcome}>Welcome</Text>
-          <Text style={styles.name}>Stefhanny Marshanda SB</Text>
+      {/* Content */}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}>
+
+        {/* Profile Card */}
+        <View style={styles.profileCard}>
+          <FastImage
+            style={styles.pic}
+            source={{
+              uri: 'https://png.pngtree.com/png-clipart/20221012/original/pngtree-doctor-woman-dokter-perempuan-indonesia-wanita-png-image_8679062.png',
+              headers: {Authorization: 'someAuthToken'},
+              priority: FastImage.priority.high,
+            }}
+            resizeMode={FastImage.resizeMode.cover}
+          />
+          <View style={styles.textCenter}>
+            <Text style={styles.welcome}>Welcome</Text>
+            <Text style={styles.name}>Stefhanny Marshanda SB</Text>
+          </View>
+          <TouchableOpacity style={styles.buttonEdit}>
+            <Text style={styles.buttonText}>Edit Profile</Text>
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity style={styles.buttonEdit}>
-          <Text style={styles.buttonText}>Edit Profile</Text>
-        </TouchableOpacity>
-      </View>
 
-      {/* Blog List */}
-      <View style={styles.blogList}>
-        {data.map((item, index) => (
-          <ItemSmall item={item} key={index} />
-        ))}
-      </View>
-    </ScrollView>
-  </View>
-);
+        {/* Blog List */}
+        <View style={styles.blogList}>
+          {data.map((item, index) => (
+            <ItemSmall item={item} key={index} />
+          ))}
+        </View>
+      </ScrollView>
+
+      {/* Floating Button */}
+      <TouchableOpacity
+        style={styles.floatingButton}
+        onPress={() => navigation.navigate('AddBlog')}>
+        <Edit color={colors.white()} variant="Linear" size={20} />
+      </TouchableOpacity>
+    </View>
+  );
+};
 
 export default Profile;
+
 
 // Styles
 const styles = StyleSheet.create({
@@ -126,4 +139,22 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     gap: 10,
   },
+  floatingButton: {
+    backgroundColor: colors.blue(),
+    padding: 15,
+    position: 'absolute',
+    bottom: 24,
+    right: 24,
+    borderRadius: 10,
+    shadowColor: colors.blue(),
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4.65,
+
+    elevation: 8,
+  },
+
 });
