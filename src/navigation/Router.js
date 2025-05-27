@@ -1,12 +1,20 @@
 import React from 'react';
 import {createStackNavigator, TransitionPresets} from '@react-navigation/stack';
 import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
-import {Home, Discover, Profile, BlogDetail} from '../screens';
-import {Home2, LocationDiscover, Receipt21, ProfileCircle} from 'iconsax-react-native'; 
+// FIX: Ubah cara import ini. Jika semua komponen diekspor secara default,
+// Anda harus mengimpornya satu per satu seperti ini:
+import Home from '../screens/Home'; // Asumsi Home.jsx memiliki `export default Home;`
+import Discover from '../screens/Discover'; // Asumsi Discover.jsx memiliki `export default Discover;`
+import Profile from '../screens/Profile'; // Asumsi Profile.jsx memiliki `export default Profile;`
+import BlogDetail from '../screens/BlogDetail'; // Asumsi BlogDetail.jsx memiliki `export default BlogDetail;`
+import Search from '../screens/Search'; // FIX: Impor Search secara langsung dari file Search.jsx
+
+import {Home2, LocationDiscover, Receipt21, ProfileCircle} from 'iconsax-react-native';
 import { fontType, colors } from '../theme';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
+
 function MainApp() {
   return (
     <Tab.Navigator
@@ -73,6 +81,7 @@ function MainApp() {
     </Tab.Navigator>
   );
 }
+
 const Router = () => {
   return (
     <Stack.Navigator>
@@ -81,11 +90,22 @@ const Router = () => {
         component={MainApp}
         options={{headerShown: false}}
       />
+      {/* SearchPage harus diletakkan SEBELUM BlogDetail jika Anda ingin modal muncul di atas tab navigator */}
+      <Stack.Screen
+        name="SearchPage"
+        component={Search} // Ini sekarang harusnya sudah diimpor dengan benar
+        options={{
+          headerShown: false,
+          presentation: 'transparentModal',
+          // Menambahkan animasi slide dari bawah untuk modal
+          ...TransitionPresets.ModalSlideFromBottomIOS,
+        }}
+      />
       <Stack.Screen
         name="BlogDetail"
         component={BlogDetail}
         options={{
-          headerShown: false, 
+          headerShown: false,
           animationEnabled: true,
           animationTypeForReplace: 'pop',
           gestureEnabled: true,

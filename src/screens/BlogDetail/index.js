@@ -1,10 +1,11 @@
-import {StyleSheet, Text, View, ScrollView, TouchableOpacity} from 'react-native';
-import React, {useState} from 'react';
+import {StyleSheet, Text, View, ScrollView, TouchableOpacity, Animated} from 'react-native';
+import React, {useState, useRef} from 'react';
 import {ArrowLeft, Like1, Receipt21, Message, Share, More} from 'iconsax-react-native';
 import {useNavigation} from '@react-navigation/native';
 import {BlogList} from '../../data';
 import FastImage from '@d11/react-native-fast-image';
 import { fontType, colors } from '../../theme';
+
 const formatNumber = number => {
   if (number >= 1000000000) {
     return (number / 1000000000).toFixed(1).replace(/\.0$/, '') + 'B';
@@ -17,7 +18,25 @@ const formatNumber = number => {
   }
   return number.toString();
 };
+
 const BlogDetail = ({route}) => {
+  const scrollY = useRef(new Animated.Value(0)).current;
+
+  // Kode animasi untuk header dan bottom bar
+  const diffClampY = Animated.diffClamp(scrollY, 0, 52); // Menggunakan 52px sebagai tinggi untuk clamp
+
+  const headerY = diffClampY.interpolate({
+    inputRange: [0, 52],
+    outputRange: [0, -52], // Geser header ke atas
+    extrapolate: 'clamp',
+  });
+
+  const bottomBarY = diffClampY.interpolate({
+    inputRange: [0, 52],
+    outputRange: [0, 52], // Geser bottom bar ke bawah (membuatnya muncul dari bawah)
+    extrapolate: 'clamp',
+  });
+
   const {blogId} = route.params;
   const [iconStates, setIconStates] = useState({
     liked: {variant: 'Linear', color: colors.grey(0.6)},
@@ -25,6 +44,7 @@ const BlogDetail = ({route}) => {
   });
   const selectedBlog = BlogList.find(blog => blog.id === blogId);
   const navigation = useNavigation();
+
   const toggleIcon = iconName => {
     setIconStates(prevStates => ({
       ...prevStates,
@@ -37,9 +57,11 @@ const BlogDetail = ({route}) => {
       },
     }));
   };
+
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      {/* Animated Header */}
+      <Animated.View style={[styles.header, {transform: [{translateY: headerY}]}]}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <ArrowLeft
             color={colors.grey(0.6)}
@@ -55,13 +77,18 @@ const BlogDetail = ({route}) => {
             style={{transform: [{rotate: '90deg'}]}}
           />
         </View>
-      </View>
+      </Animated.View>
+
       <ScrollView
         showsVerticalScrollIndicator={false}
+        onScroll={Animated.event(
+            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+            { useNativeDriver: true }
+        )}
         contentContainerStyle={{
           paddingHorizontal: 24,
-          paddingTop: 62,
-          paddingBottom: 54,
+          paddingTop: 52 + 10, // Kompensasi tinggi header
+          paddingBottom: 54 + 52, // Kompensasi tinggi bottomBar
         }}>
         <FastImage
           style={styles.image}
@@ -84,7 +111,9 @@ const BlogDetail = ({route}) => {
         <Text style={styles.title}>{selectedBlog.title}</Text>
         <Text style={styles.content}>{selectedBlog.content}</Text>
       </ScrollView>
-      <View style={styles.bottomBar}>
+
+      {/* Animated Bottom Bar - Ini adalah bagian yang Anda minta ditambahkan */}
+      <Animated.View style={[styles.bottomBar, {transform: [{translateY: bottomBarY}]}]}>
         <View style={{flexDirection:'row', gap:5, alignItems:'center'}}>
           <TouchableOpacity onPress={() => toggleIcon('liked')}>
             <Like1
@@ -110,11 +139,12 @@ const BlogDetail = ({route}) => {
             size={24}
           />
         </TouchableOpacity>
-      </View>
+      </Animated.View>
     </View>
   );
 };
 export default BlogDetail;
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -146,10 +176,11 @@ const styles = StyleSheet.create({
     right: 0,
     flexDirection: 'row',
     justifyContent: 'space-between',
+    height: 52, // Tinggi bottom bar
   },
   image: {
     height: 200,
-    width: 'auto',
+    width: '100%',
     borderRadius: 15,
   },
   info: {
