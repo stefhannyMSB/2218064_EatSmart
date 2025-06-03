@@ -1,59 +1,124 @@
-import React from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   ScrollView,
   StyleSheet,
   Text,
   View,
   TouchableOpacity,
-  Image, 
+  ActivityIndicator,
+  RefreshControl,
+  Image,
 } from 'react-native';
-import {Setting2, Edit} from 'iconsax-react-native'; 
-import {BlogList} from '../../data';
-import {ItemSmall} from '../../components';
-import {fontType, colors} from '../../theme';
-import {useNavigation} from '@react-navigation/native'; 
-
-const data = BlogList.slice(5);
+import { Edit, Setting2 } from 'iconsax-react-native';
+import { ProfileData } from '../../data'; // tetap diimport tapi nama dari sini tidak dipakai
+import { ItemSmall } from '../../components';
+import { useNavigation } from '@react-navigation/native';
+import { fontType, colors } from '../../theme';
+import { collection, getFirestore, onSnapshot } from '@react-native-firebase/firestore';
 
 const Profile = () => {
-  const navigation = useNavigation(); 
+  const navigation = useNavigation();
+  const [loading, setLoading] = useState(true);
+  const [blogData, setBlogData] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // URL gambar profil, ganti sesuai gambar kamu sendiri
+  const profileImageUri = 'https://cdn4.iconfinder.com/data/icons/circle-avatars-1/128/050_girl_avatar_profile_woman_suit_student_officer-2-1024.png';
+
+  useEffect(() => {
+    const db = getFirestore();
+    const blogRef = collection(db, 'blog');
+
+    const subscriber = onSnapshot(blogRef, (snapshot) => {
+      const blogs = [];
+      snapshot.forEach((doc) => {
+        blogs.push({
+          ...doc.data(),
+          id: doc.id,
+        });
+      });
+      setBlogData(blogs);
+      setLoading(false);
+    });
+
+    return () => subscriber();
+  }, []);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    setTimeout(() => {
+      const db = getFirestore();
+      const blogRef = collection(db, 'blog');
+      onSnapshot(blogRef, (snapshot) => {
+        const blogs = [];
+        snapshot.forEach((doc) => {
+          blogs.push({
+            ...doc.data(),
+            id: doc.id,
+          });
+        });
+        setBlogData(blogs);
+        setLoading(false);
+      });
+
+      setRefreshing(false);
+    }, 1500);
+  }, []);
+
   return (
     <View style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>MY PROFILE</Text>
-        <Setting2 color={colors.black()} variant="Linear" size={24} />
+        <TouchableOpacity>
+          <Setting2 color={colors.black()} variant="Linear" size={24} />
+        </TouchableOpacity>
       </View>
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}>
-        <View style={styles.profileCard}>
+        contentContainerStyle={{
+          paddingHorizontal: 24,
+          gap: 10,
+          paddingVertical: 20,
+        }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }>
+        <View
+          style={{
+            backgroundColor: colors.white(),
+            borderRadius: 20,
+            padding: 20,
+            alignItems: 'center',
+            gap: 10,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.2,
+            shadowRadius: 3,
+            elevation: 5,
+          }}>
+          {/* Foto Profil */}
           <Image
-            style={styles.pic}
-            source={{
-              uri: 'https://png.pngtree.com/png-clipart/20221012/original/pngtree-doctor-woman-dokter-perempuan-indonesia-wanita-png-image_8679062.png',
-            }}
-            resizeMode="cover"
+            source={{ uri: profileImageUri }}
+            style={{ width: 80, height: 80, borderRadius: 40, marginBottom: 10 }}
           />
-          <View style={styles.textCenter}>
-            <Text style={styles.welcome}>Welcome</Text>
-            <Text style={styles.name}>Stefhanny Marshanda SB</Text>
-          </View>
-          <TouchableOpacity style={styles.buttonEdit}>
-            <Text style={styles.buttonText}>Edit Profile</Text>
+          <Text style={{ color: 'red', fontSize: 12 }}>Welcome</Text>
+          {/* Nama diganti langsung */}
+          <Text style={profile.name}>Stefhanny</Text>
+          <TouchableOpacity style={profile.buttonEdit}>
+            <Text style={profile.buttonText}>Edit Profile</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Blog List */}
-        <View style={styles.blogList}>
-          {data.map((item, index) => (
-            <ItemSmall item={item} key={index} />
-          ))}
+        <View style={{ paddingVertical: 10, gap: 10 }}>
+          {loading ? (
+            <ActivityIndicator size={'large'} color={colors.blue()} />
+          ) : (
+            blogData.map((item, index) => <ItemSmall item={item} key={index} />)
+          )}
         </View>
       </ScrollView>
 
-      {/* Floating Button */}
       <TouchableOpacity
         style={styles.floatingButton}
         onPress={() => navigation.navigate('AddBlog')}>
@@ -69,67 +134,27 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#BDB76B',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
   header: {
     paddingHorizontal: 24,
-    paddingVertical: 12,
-    flexDirection: 'row',
     justifyContent: 'space-between',
+    flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#EEE8AA',
+    height: 52,
     elevation: 8,
+    paddingTop: 8,
+    paddingBottom: 4,
+    backgroundColor: '#d6cf91',
   },
   title: {
     fontSize: 18,
-    fontFamily: fontType['Pjs-Bold'],
-    color: colors.black(),
-  },
-  scrollContent: {
-    paddingHorizontal: 24,
-    paddingVertical: 20,
-  },
-  profileCard: {
-    backgroundColor: '#FFF',
-    borderRadius: 20,
-    padding: 20,
-    alignItems: 'center',
-    elevation: 4,
-  },
-  pic: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-  },
-  textCenter: {
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  welcome: {
-    fontSize: 12,
-    fontFamily: fontType['Pjs-Regular'],
-    color: '#ec5353',
-  },
-  name: {
-    color: colors.black(),
-    fontSize: 20,
-    fontFamily: fontType['Pjs-Bold'],
-    textTransform: 'capitalize',
-  },
-  buttonEdit: {
-    marginTop: 16,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    backgroundColor: '#BDB76B',
-    borderRadius: 8,
-  },
-  buttonText: {
-    fontSize: 14,
     fontFamily: fontType['Pjs-SemiBold'],
     color: colors.black(),
-  },
-  blogList: {
-    paddingTop: 10,
-    gap: 10,
   },
   floatingButton: {
     backgroundColor: colors.blue(),
@@ -146,5 +171,25 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 4.65,
     elevation: 8,
+  },
+});
+
+const profile = StyleSheet.create({
+  name: {
+    color: colors.black(),
+    fontSize: 20,
+    fontFamily: fontType['Pjs-ExtraBold'],
+    textAlign: 'center',
+  },
+  buttonEdit: {
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    backgroundColor: colors.grey(0.1),
+    borderRadius: 10,
+  },
+  buttonText: {
+    fontSize: 14,
+    fontFamily: fontType['Pjs-SemiBold'],
+    color: colors.black(),
   },
 });

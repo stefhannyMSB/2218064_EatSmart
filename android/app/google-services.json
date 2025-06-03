@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "448998942820",
+    "project_id": "eatsmartapp-9d68a",
+    "storage_bucket": "eatsmartapp-9d68a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:448998942820:android:f901ed8a3bf205e354d771",
+        "android_client_info": {
+          "package_name": "com.woco"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC0XZ2BOZH1ikDPUqRxrCaMdrV4tK-qHjw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,3 +1,4 @@
+// Tidak ada import formatDate atau formatNumber
 import React, { useState } from 'react';
 import {
   View,
@@ -7,13 +8,13 @@ import {
   StyleSheet,
   ScrollView,
   ActivityIndicator,
-  Modal,
-  Alert,
 } from 'react-native';
-import { ArrowLeft } from 'iconsax-react-native';
+import FastImage from '@d11/react-native-fast-image';
+import { ArrowLeft, AddSquare, Add } from 'iconsax-react-native';
 import { useNavigation } from '@react-navigation/native';
 import { fontType, colors } from '../../theme';
-import axios from 'axios';
+import ImagePicker from 'react-native-image-crop-picker';
+import { addDoc, collection, getFirestore } from '@react-native-firebase/firestore';
 
 const AddBlogForm = () => {
   const [loading, setLoading] = useState(false);
@@ -21,8 +22,6 @@ const AddBlogForm = () => {
     title: '',
     content: '',
     category: {},
-    totalLikes: 0,
-    totalComments: 0,
   });
   const [image, setImage] = useState('');
   const navigation = useNavigation();
@@ -41,28 +40,67 @@ const AddBlogForm = () => {
     }));
   };
 
+  const handleImagePick = async () => {
+    try {
+      const image = await ImagePicker.openPicker({
+        width: 1920,
+        height: 1080,
+        cropping: true,
+      });
+      setImage(image.path);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   const handleUpload = async () => {
-    if (!blogData.title.trim() || !blogData.content.trim() || !blogData.category.id) {
-      Alert.alert('Data tidak lengkap', 'Mohon isi title, content, dan category');
+    if (!image || !blogData.title || !blogData.content || !blogData.category?.id) {
+      alert('Mohon lengkapi semua data dan unggah gambar');
       return;
     }
 
+    let filename = image.substring(image.lastIndexOf('/') + 1);
+    const extension = filename.split('.').pop();
+    const name = filename.split('.').slice(0, -1).join('.');
+    filename = name + Date.now() + '.' + extension;
+
     setLoading(true);
     try {
-      const response = await axios.post('https://683d6909199a0039e9e55a0c.mockapi.io/api/blog', {
+      const imageFormData = new FormData();
+      imageFormData.append('file', {
+        uri: image,
+        type: `image/${extension}`,
+        name: filename,
+      });
+
+      const result = await fetch('https://backend-file-praktikum.vercel.app/upload/', {
+        method: 'POST',
+        body: imageFormData,
+      });
+
+      if (result.status !== 200) {
+        throw new Error('Gagal upload gambar');
+      }
+
+      const { url } = await result.json();
+
+      const db = getFirestore();
+      const blogRef = collection(db, 'blog');
+      await addDoc(blogRef, {
         title: blogData.title,
         category: blogData.category,
-        image,
+        image: url,
         content: blogData.content,
+        createdAt: new Date(),
       });
-      if (response.status === 201) {
-        Alert.alert('Sukses', 'Blog berhasil diunggah');
-        navigation.goBack();
-      }
-    } catch (e) {
-      Alert.alert('Gagal Mengunggah Blog', `Error: ${e.message}`);
-    } finally {
+
       setLoading(false);
+      console.log('Blog added!');
+      navigation.goBack();
+    } catch (error) {
+      setLoading(false);
+      console.log(error);
+      alert('Terjadi kesalahan saat upload');
     }
   };
 
@@ -76,14 +114,12 @@ const AddBlogForm = () => {
           <Text style={styles.title}>Write blog</Text>
         </View>
       </View>
-
       <ScrollView
         contentContainerStyle={{
           paddingHorizontal: 24,
           paddingVertical: 10,
           gap: 10,
-        }}
-      >
+        }}>
         <View style={textInput.borderDashed}>
           <TextInput
             placeholder="Title"
@@ -94,7 +130,6 @@ const AddBlogForm = () => {
             style={textInput.title}
           />
         </View>
-
         <View style={[textInput.borderDashed, { minHeight: 250 }]}>
           <TextInput
             placeholder="Content"
@@ -105,37 +140,28 @@ const AddBlogForm = () => {
             style={textInput.content}
           />
         </View>
-
         <View style={[textInput.borderDashed]}>
-          <TextInput
-            placeholder="Image URL"
-            value={image}
-            onChangeText={text => setImage(text)}
-            placeholderTextColor={colors.grey(0.6)}
-            style={textInput.content}
-          />
-        </View>
-
-        <View style={[textInput.borderDashed]}>
-          <Text
-            style={{
-              fontSize: 12,
-              fontFamily: fontType['Pjs-Regular'],
-              color: colors.grey(0.6),
-            }}
-          >
-            Category
-          </Text>
+          <Text style={category.title}>Category</Text>
           <View style={category.container}>
             {dataCategory.map((item, index) => {
               const isSelected = item.id === blogData.category.id;
               return (
                 <TouchableOpacity
                   key={index}
-                  onPress={() => handleChange('category', { id: item.id, name: item.name })}
-                  style={[category.item, { backgroundColor: isSelected ? colors.black() : colors.grey(0.08) }]}
-                >
-                  <Text style={[category.name, { color: isSelected ? colors.white() : colors.grey() }]}>
+                  onPress={() =>
+                    handleChange('category', { id: item.id, name: item.name })
+                  }
+                  style={[
+                    category.item,
+                    {
+                      backgroundColor: isSelected ? colors.black() : colors.grey(0.08),
+                    },
+                  ]}>
+                  <Text
+                    style={[
+                      category.name,
+                      { color: isSelected ? colors.white() : colors.grey() },
+                    ]}>
                     {item.name}
                   </Text>
                 </TouchableOpacity>
@@ -143,19 +169,69 @@ const AddBlogForm = () => {
             })}
           </View>
         </View>
-      </ScrollView>
-
-      <View style={styles.bottomBar}>
-        <Modal visible={loading} animationType="none" transparent>
-          <View style={styles.loadingOverlay}>
-            <ActivityIndicator size="large" color={colors.blue()} />
+        {image ? (
+          <View style={{ position: 'relative' }}>
+            <FastImage
+              style={{ width: '100%', height: 127, borderRadius: 5 }}
+              source={{
+                uri: image,
+                headers: { Authorization: 'someAuthToken' },
+                priority: FastImage.priority.high,
+              }}
+              resizeMode={FastImage.resizeMode.cover}
+            />
+            <TouchableOpacity
+              style={{
+                position: 'absolute',
+                top: -5,
+                right: -5,
+                backgroundColor: colors.blue(),
+                borderRadius: 25,
+              }}
+              onPress={() => setImage(null)}>
+              <Add
+                size={20}
+                variant="Linear"
+                color={colors.white()}
+                style={{ transform: [{ rotate: '45deg' }] }}
+              />
+            </TouchableOpacity>
           </View>
-        </Modal>
-
+        ) : (
+          <TouchableOpacity onPress={handleImagePick}>
+            <View
+              style={[
+                textInput.borderDashed,
+                {
+                  gap: 10,
+                  paddingVertical: 30,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                },
+              ]}>
+              <AddSquare color={colors.grey(0.6)} variant="Linear" size={42} />
+              <Text
+                style={{
+                  fontFamily: fontType['Pjs-Regular'],
+                  fontSize: 12,
+                  color: colors.grey(0.6),
+                }}>
+                Upload Thumbnail
+              </Text>
+            </View>
+          </TouchableOpacity>
+        )}
+      </ScrollView>
+      <View style={styles.bottomBar}>
         <TouchableOpacity style={styles.button} onPress={handleUpload}>
           <Text style={styles.buttonLabel}>Upload</Text>
         </TouchableOpacity>
       </View>
+      {loading && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color={colors.blue()} />
+        </View>
+      )}
     </View>
   );
 };
