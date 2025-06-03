@@ -1,4 +1,3 @@
-// Tidak ada import formatDate atau formatNumber
 import React, { useState } from 'react';
 import {
   View,
@@ -15,8 +14,114 @@ import { useNavigation } from '@react-navigation/native';
 import { fontType, colors } from '../../theme';
 import ImagePicker from 'react-native-image-crop-picker';
 import { addDoc, collection, getFirestore } from '@react-native-firebase/firestore';
+import notifee, {AndroidImportance} from '@notifee/react-native';
 
 const AddBlogForm = () => {
+  const dataUploadOption = [
+    {id: 1, name: 'Immediate'},
+    {id: 2, name: 'After 10 Seconds'},
+    {id: 3, name: 'After 30 Seconds'},
+];	
+ 
+const [uploadOption, setUploadOption] = useState({id: 1, name: 'Immediate'});
+const handleDelayedPost = async jeda => {
+const hasil = await notifee.requestPermission();
+    if (hasil.authorizationStatus == 0) {
+      await notifee.openNotificationSettings();
+      return;
+    }
+
+    // tambahkan notifikasi channel
+    const channelId = await notifee.createChannel({
+      id: 'post',
+      name: 'Upload Blog',
+      importance: AndroidImportance.HIGH,
+    });
+
+    // tambahkan Foreground Service
+    notifee.registerForegroundService(notification => {
+      return new Promise(async () => {
+        // tunda upload blog, sesuai dengan parameter jeda
+        await new Promise(resolve => {
+          setTimeout(() => {
+            resolve();
+          }, jeda * 1000);
+        });
+
+        // setelah jeda terjadi baru upload blog
+        let filename = image.substring(image.lastIndexOf('/') + 1);
+        const extension = filename.split('.').pop();
+        const name = filename.split('.').slice(0, -1).join('.');
+        filename = name + Date.now() + '.' + extension;
+
+        try {
+          const imageFormData = new FormData();
+          imageFormData.append('file', {
+            uri: image,
+            type: `image/${extension}`, // or 'image/png'
+            name: filename,
+          });
+
+          const result = await fetch(
+            'https://backend-file-praktikum.vercel.app/upload/',
+            {
+              method: 'POST',
+              body: imageFormData,
+            },
+          );
+          if (result.status !== 200) {
+            throw new Error('failed to upload image');
+          }
+
+          const {url} = await result.json();
+
+          const db = getFirestore();
+          const blogRef = collection(db, 'blog');
+          addDoc(blogRef, {
+            title: blogData.title,
+            category: blogData.category,
+            image: url,
+            content: blogData.content,
+            
+          });
+
+          console.log('Blog added!');
+
+          // tampilkan notifikasi blog sukses di upload
+          notifee.displayNotification({
+            title: 'Blog DiUpload 👋👋',
+            body: `Blog Sukses di Upload`,
+            android: {
+              channelId: channelId,
+            },
+          });
+        } catch (error) {
+          console.log(error);
+          // tampilkan notifikasi blog gagal di upload
+          notifee.displayNotification({
+            title: 'Blog Gagal DiUpload ❗❗',
+            body: `Blog Gagal di Upload`,
+            android: {
+              channelId: channelId,
+            },
+          });
+        }
+
+        notifee.stopForegroundService();
+      });
+    });
+
+    // tampilkan notifikasi blog di upload dengan di jadwalkan
+    notifee.displayNotification({
+      title: 'Upload Blog DiJawadkan',
+      body: `Blog akan di Upload dalam ${jeda} detik ⬆️⬆️`,
+      android: {
+        channelId: channelId,
+        asForegroundService: true,
+      },
+    });
+  };
+
   const [loading, setLoading] = useState(false);
   const [blogData, setBlogData] = useState({
     title: '',
@@ -54,55 +159,62 @@ const AddBlogForm = () => {
   };
 
   const handleUpload = async () => {
-    if (!image || !blogData.title || !blogData.content || !blogData.category?.id) {
-      alert('Mohon lengkapi semua data dan unggah gambar');
-      return;
-    }
+    if (uploadOption.id == 1) {
+      let filename = image.substring(image.lastIndexOf('/') + 1);
+      const extension = filename.split('.').pop();
+      const name = filename.split('.').slice(0, -1).join('.');
+      filename = name + Date.now() + '.' + extension;
 
-    let filename = image.substring(image.lastIndexOf('/') + 1);
-    const extension = filename.split('.').pop();
-    const name = filename.split('.').slice(0, -1).join('.');
-    filename = name + Date.now() + '.' + extension;
+      setLoading(true);
+      try {
+        const imageFormData = new FormData();
+        imageFormData.append('file', {
+          uri: image,
+          type: `image/${extension}`, // or 'image/png'
+          name: filename,
+        });
 
-    setLoading(true);
-    try {
-      const imageFormData = new FormData();
-      imageFormData.append('file', {
-        uri: image,
-        type: `image/${extension}`,
-        name: filename,
-      });
+        const result = await fetch(
+          'https://backend-file-praktikum.vercel.app/upload/',
+          {
+            method: 'POST',
+            body: imageFormData,
+          },
+        );
+        if (result.status !== 200) {
+          throw new Error('failed to upload image');
+        }
 
-      const result = await fetch('https://backend-file-praktikum.vercel.app/upload/', {
-        method: 'POST',
-        body: imageFormData,
-      });
+        const {url} = await result.json();
 
-      if (result.status !== 200) {
-        throw new Error('Gagal upload gambar');
+        const db = getFirestore();
+        const blogRef = collection(db, 'blog');
+        addDoc(blogRef, {
+          title: blogData.title,
+          category: blogData.category,
+          image: url,
+          content: blogData.content,
+          totalComments: blogData.totalComments,
+          totalLikes: blogData.totalLikes,
+          createdAt: new Date(),
+        });
+
+        setLoading(false);
+        console.log('Blog added!');
+        navigation.goBack();
+      } catch (error) {
+        setLoading(false);
+        console.log(error);
       }
-
-      const { url } = await result.json();
-
-      const db = getFirestore();
-      const blogRef = collection(db, 'blog');
-      await addDoc(blogRef, {
-        title: blogData.title,
-        category: blogData.category,
-        image: url,
-        content: blogData.content,
-        createdAt: new Date(),
-      });
-
-      setLoading(false);
-      console.log('Blog added!');
+    } else if (uploadOption.id == 2) { // jadwalkan selama 10 detik baru upload
       navigation.goBack();
-    } catch (error) {
-      setLoading(false);
-      console.log(error);
-      alert('Terjadi kesalahan saat upload');
+      handleDelayedPost(10);
+    } else if (uploadOption.id == 3) { // jadwalkan selama 30 detik baru upload
+      navigation.goBack();
+      handleDelayedPost(30);
     }
   };
+
 
   return (
     <View style={styles.container}>
@@ -110,7 +222,7 @@ const AddBlogForm = () => {
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <ArrowLeft color={colors.black()} variant="Linear" size={24} />
         </TouchableOpacity>
-        <View style={{ flex: 1, alignItems: 'center' }}>
+        <View style={{flex: 1, alignItems: 'center'}}>
           <Text style={styles.title}>Write blog</Text>
         </View>
       </View>
@@ -130,7 +242,7 @@ const AddBlogForm = () => {
             style={textInput.title}
           />
         </View>
-        <View style={[textInput.borderDashed, { minHeight: 250 }]}>
+        <View style={[textInput.borderDashed, {minHeight: 250}]}>
           <TextInput
             placeholder="Content"
             value={blogData.content}
@@ -144,24 +256,22 @@ const AddBlogForm = () => {
           <Text style={category.title}>Category</Text>
           <View style={category.container}>
             {dataCategory.map((item, index) => {
-              const isSelected = item.id === blogData.category.id;
+              const bgColor =
+                item.id === blogData.category.id
+                  ? colors.black()
+                  : colors.grey(0.08);
+              const color =
+                item.id === blogData.category.id
+                  ? colors.white()
+                  : colors.grey();
               return (
                 <TouchableOpacity
                   key={index}
                   onPress={() =>
-                    handleChange('category', { id: item.id, name: item.name })
+                    handleChange('category', {id: item.id, name: item.name})
                   }
-                  style={[
-                    category.item,
-                    {
-                      backgroundColor: isSelected ? colors.black() : colors.grey(0.08),
-                    },
-                  ]}>
-                  <Text
-                    style={[
-                      category.name,
-                      { color: isSelected ? colors.white() : colors.grey() },
-                    ]}>
+                  style={[category.item, {backgroundColor: bgColor}]}>
+                  <Text style={[category.name, {color: color}]}>
                     {item.name}
                   </Text>
                 </TouchableOpacity>
@@ -170,12 +280,12 @@ const AddBlogForm = () => {
           </View>
         </View>
         {image ? (
-          <View style={{ position: 'relative' }}>
+          <View style={{position: 'relative'}}>
             <FastImage
-              style={{ width: '100%', height: 127, borderRadius: 5 }}
+              style={{width: '100%', height: 127, borderRadius: 5}}
               source={{
                 uri: image,
-                headers: { Authorization: 'someAuthToken' },
+                headers: {Authorization: 'someAuthToken'},
                 priority: FastImage.priority.high,
               }}
               resizeMode={FastImage.resizeMode.cover}
@@ -193,7 +303,7 @@ const AddBlogForm = () => {
                 size={20}
                 variant="Linear"
                 color={colors.white()}
-                style={{ transform: [{ rotate: '45deg' }] }}
+                style={{transform: [{rotate: '45deg'}]}}
               />
             </TouchableOpacity>
           </View>
@@ -221,6 +331,33 @@ const AddBlogForm = () => {
             </View>
           </TouchableOpacity>
         )}
+
+        {/* Opsi Upload Blog */}
+        <View style={[textInput.borderDashed]}>
+          <Text style={uploadOptionStyle.title}>Upload Option</Text>
+          <View style={uploadOptionStyle.container}>
+            {dataUploadOption.map((item, index) => {
+              const bgColor =
+                item.id === uploadOption.id
+                  ? colors.black()
+                  : colors.grey(0.08);
+              const color =
+                item.id === uploadOption.id ? colors.white() : colors.grey();
+              return (
+                <TouchableOpacity
+                  key={index}
+                  onPress={() =>
+                    setUploadOption({id: item.id, name: item.name})
+                  }
+                  style={[uploadOptionStyle.item, {backgroundColor: bgColor}]}>
+                  <Text style={[uploadOptionStyle.name, {color: color}]}>
+                    {item.name}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
       </ScrollView>
       <View style={styles.bottomBar}>
         <TouchableOpacity style={styles.button} onPress={handleUpload}>
@@ -328,3 +465,27 @@ const category = StyleSheet.create({
     fontFamily: fontType['Pjs-Medium'],
   },
 });
+
+const uploadOptionStyle = StyleSheet.create({
+  title: {
+    fontSize: 12,
+    fontFamily: fontType['Pjs-Regular'],
+    color: colors.grey(0.6),
+  },
+  container: {
+    flexWrap: 'wrap',
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 10,
+  },
+  item: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 25,
+  },
+  name: {
+    fontSize: 10,
+    fontFamily: fontType['Pjs-Medium'],
+  },
+});
+
