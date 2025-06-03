@@ -238,4 +238,4 @@ const category = StyleSheet.create({
     color: '#8FBC8F',
   },
 });
-  
+

@@ -1,19 +1,22 @@
-import Home from "./Home";
-import BlogDetail from "./BlogDetail";
-import Discover from "./Discover";
-import Profile from "./Profile";
-import AddBlogForm from "./AddBlogForm";
-
-export {Home, BlogDetail, Discover, Profile, AddBlogForm}
-
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  ActivityIndicator,
+  Modal,
+  Alert,
+} from 'react-native';
+import { ArrowLeft } from 'iconsax-react-native';
+import { useNavigation } from '@react-navigation/native';
+import { fontType, colors } from '../../theme';
+import axios from 'axios';
 
 const AddBlogForm = () => {
-const dataCategory = [
-    {id: 1, name: 'Rekomendasi'},
-    {id: 2, name: 'Diet Sehat'},
-    {id: 3, name: 'Flu'},
-    {id: 4, name: 'Batuk'},
-  ];
+  const [loading, setLoading] = useState(false);
   const [blogData, setBlogData] = useState({
     title: '',
     content: '',
@@ -21,32 +24,66 @@ const dataCategory = [
     totalLikes: 0,
     totalComments: 0,
   });
-  const handleChange = (key, value) => {
-    setBlogData({
-      ...blogData,
-      [key]: value,
-    });
-  };
-  const [image, setImage] = useState(null);
+  const [image, setImage] = useState('');
   const navigation = useNavigation();
+
+  const dataCategory = [
+    { id: 1, name: 'Rekomendasi' },
+    { id: 2, name: 'Diet Sehat' },
+    { id: 3, name: 'Flu' },
+    { id: 4, name: 'Batuk' },
+  ];
+
+  const handleChange = (key, value) => {
+    setBlogData(prev => ({
+      ...prev,
+      [key]: value,
+    }));
+  };
+
+  const handleUpload = async () => {
+    if (!blogData.title.trim() || !blogData.content.trim() || !blogData.category.id) {
+      Alert.alert('Data tidak lengkap', 'Mohon isi title, content, dan category');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await axios.post('https://683d6909199a0039e9e55a0c.mockapi.io/api/blog', {
+        title: blogData.title,
+        category: blogData.category,
+        image,
+        content: blogData.content,
+      });
+      if (response.status === 201) {
+        Alert.alert('Sukses', 'Blog berhasil diunggah');
+        navigation.goBack();
+      }
+    } catch (e) {
+      Alert.alert('Gagal Mengunggah Blog', `Error: ${e.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <View
-      style={styles.container}
-    >
+    <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <ArrowLeft color={colors.black()} variant="Linear" size={24} />
         </TouchableOpacity>
-        <View style={{flex: 1, alignItems: 'center'}}>
+        <View style={{ flex: 1, alignItems: 'center' }}>
           <Text style={styles.title}>Write blog</Text>
         </View>
       </View>
+
       <ScrollView
         contentContainerStyle={{
           paddingHorizontal: 24,
           paddingVertical: 10,
           gap: 10,
-        }} >
+        }}
+      >
         <View style={textInput.borderDashed}>
           <TextInput
             placeholder="Title"
@@ -57,7 +94,8 @@ const dataCategory = [
             style={textInput.title}
           />
         </View>
-        <View style={[textInput.borderDashed, {minHeight: 250}]}>
+
+        <View style={[textInput.borderDashed, { minHeight: 250 }]}>
           <TextInput
             placeholder="Content"
             value={blogData.content}
@@ -67,44 +105,37 @@ const dataCategory = [
             style={textInput.content}
           />
         </View>
+
         <View style={[textInput.borderDashed]}>
           <TextInput
-            placeholder="Image"
+            placeholder="Image URL"
             value={image}
             onChangeText={text => setImage(text)}
             placeholderTextColor={colors.grey(0.6)}
             style={textInput.content}
           />
         </View>
+
         <View style={[textInput.borderDashed]}>
           <Text
             style={{
               fontSize: 12,
               fontFamily: fontType['Pjs-Regular'],
               color: colors.grey(0.6),
-            }}>
+            }}
+          >
             Category
           </Text>
-          <View
-            style={category.container}>
+          <View style={category.container}>
             {dataCategory.map((item, index) => {
-              const bgColor =
-                item.id === blogData.category.id
-                  ? colors.black()
-                  : colors.grey(0.08);
-              const color =
-                item.id === blogData.category.id
-                  ? colors.white()
-                  : colors.grey();
+              const isSelected = item.id === blogData.category.id;
               return (
                 <TouchableOpacity
                   key={index}
-                  onPress={() =>
-                    handleChange('category', {id: item.id, name: item.name})
-                  }
-                  style={[category.item, {backgroundColor: bgColor}]}>
-                  <Text
-                    style={[category.name, {color: color}]}>
+                  onPress={() => handleChange('category', { id: item.id, name: item.name })}
+                  style={[category.item, { backgroundColor: isSelected ? colors.black() : colors.grey(0.08) }]}
+                >
+                  <Text style={[category.name, { color: isSelected ? colors.white() : colors.grey() }]}>
                     {item.name}
                   </Text>
                 </TouchableOpacity>
@@ -113,24 +144,18 @@ const dataCategory = [
           </View>
         </View>
       </ScrollView>
+
       <View style={styles.bottomBar}>
-        <TouchableOpacity style={styles.button} onPress={() => {}}>
+        <Modal visible={loading} animationType="none" transparent>
+          <View style={styles.loadingOverlay}>
+            <ActivityIndicator size="large" color={colors.blue()} />
+          </View>
+        </Modal>
+
+        <TouchableOpacity style={styles.button} onPress={handleUpload}>
           <Text style={styles.buttonLabel}>Upload</Text>
         </TouchableOpacity>
       </View>
-      <Stack.Screen
-        name="AddBlog"
-        component={AddBlogForm}
-        options={{
-          headerShown: false, 
-          animationEnabled: true,
-          animationTypeForReplace: 'pop',
-          gestureEnabled: true,
-          gestureDirection : 'horizontal',
-          ...TransitionPresets.SlideFromRightIOS,
-        }}
-      />
-
     </View>
   );
 };
@@ -138,6 +163,12 @@ const dataCategory = [
 export default AddBlogForm;
 
 const styles = StyleSheet.create({
+  loadingOverlay: {
+    flex: 1,
+    backgroundColor: colors.black(0.4),
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   container: {
     flex: 1,
     backgroundColor: colors.white(),
@@ -162,13 +193,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 10,
     shadowColor: colors.black(),
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
-
     elevation: 5,
   },
   button: {
@@ -185,6 +212,7 @@ const styles = StyleSheet.create({
     color: colors.white(),
   },
 });
+
 const textInput = StyleSheet.create({
   borderDashed: {
     borderStyle: 'dashed',
@@ -206,25 +234,21 @@ const textInput = StyleSheet.create({
     padding: 0,
   },
 });
+
 const category = StyleSheet.create({
-  title: {
-    fontSize: 12,
-    fontFamily: fontType['Pjs-Regular'],
-    color: colors.grey(0.6),
-  },
-  container:{
+  container: {
     flexWrap: 'wrap',
     flexDirection: 'row',
     gap: 10,
     marginTop: 10,
   },
-  item:{
+  item: {
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 25,
   },
-  name:{
+  name: {
     fontSize: 10,
     fontFamily: fontType['Pjs-Medium'],
-  }
-})
+  },
+});

@@ -1,15 +1,20 @@
 import React from 'react';
-import {createStackNavigator, TransitionPresets} from '@react-navigation/stack';
-import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
-// FIX: Ubah cara import ini. Jika semua komponen diekspor secara default,
-// Anda harus mengimpornya satu per satu seperti ini:
-import Home from '../screens/Home'; // Asumsi Home.jsx memiliki `export default Home;`
-import Discover from '../screens/Discover'; // Asumsi Discover.jsx memiliki `export default Discover;`
-import Profile from '../screens/Profile'; // Asumsi Profile.jsx memiliki `export default Profile;`
-import BlogDetail from '../screens/BlogDetail'; // Asumsi BlogDetail.jsx memiliki `export default BlogDetail;`
-import Search from '../screens/Search'; // FIX: Impor Search secara langsung dari file Search.jsx
+import { createStackNavigator, TransitionPresets } from '@react-navigation/stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
-import {Home2, LocationDiscover, Receipt21, ProfileCircle} from 'iconsax-react-native';
+import Home from '../screens/Home';
+import Discover from '../screens/Discover';
+import Profile from '../screens/Profile';
+import BlogDetail from '../screens/BlogDetail';
+import Search from '../screens/Search';
+import EditBlogForm from '../screens/EditBlogForm';
+import AddBlogForm from '../screens/AddBlogForm'; 
+
+import {
+  Home2,
+  LocationDiscover,
+  ProfileCircle,
+} from 'iconsax-react-native';
 import { fontType, colors } from '../theme';
 
 const Tab = createBottomTabNavigator();
@@ -38,7 +43,7 @@ function MainApp() {
         component={Home}
         options={{
           tabBarLabel: 'Home',
-          tabBarIcon: ({focused, color}) => (
+          tabBarIcon: ({ focused, color }) => (
             <Home2
               color={color}
               variant={focused ? 'Bold' : 'Linear'}
@@ -53,7 +58,7 @@ function MainApp() {
         component={Discover}
         options={{
           tabBarLabel: 'Discover',
-          tabBarIcon: ({focused, color}) => (
+          tabBarIcon: ({ focused, color }) => (
             <LocationDiscover
               color={color}
               variant={focused ? 'Bold' : 'Linear'}
@@ -68,7 +73,7 @@ function MainApp() {
         component={Profile}
         options={{
           tabBarLabel: 'Profile',
-          tabBarIcon: ({focused, color}) => (
+          tabBarIcon: ({ focused, color }) => (
             <ProfileCircle
               color={color}
               variant={focused ? 'Bold' : 'Linear'}
@@ -88,16 +93,14 @@ const Router = () => {
       <Stack.Screen
         name="MainApp"
         component={MainApp}
-        options={{headerShown: false}}
+        options={{ headerShown: false }}
       />
-      {/* SearchPage harus diletakkan SEBELUM BlogDetail jika Anda ingin modal muncul di atas tab navigator */}
       <Stack.Screen
         name="SearchPage"
-        component={Search} // Ini sekarang harusnya sudah diimpor dengan benar
+        component={Search}
         options={{
           headerShown: false,
           presentation: 'transparentModal',
-          // Menambahkan animasi slide dari bawah untuk modal
           ...TransitionPresets.ModalSlideFromBottomIOS,
         }}
       />
@@ -107,13 +110,35 @@ const Router = () => {
         options={{
           headerShown: false,
           animationEnabled: true,
-          animationTypeForReplace: 'pop',
           gestureEnabled: true,
-          gestureDirection : 'horizontal',
+          gestureDirection: 'horizontal',
+          ...TransitionPresets.SlideFromRightIOS,
+        }}
+      />
+      <Stack.Screen
+        name="EditBlog"
+        component={EditBlogForm}
+        options={{
+          headerShown: false,
+          animationEnabled: true,
+          gestureEnabled: true,
+          gestureDirection: 'horizontal',
+          ...TransitionPresets.SlideFromRightIOS,
+        }}
+      />
+      <Stack.Screen
+        name="AddBlog"
+        component={AddBlogForm} 
+        options={{
+          headerShown: false,
+          animationEnabled: true,
+          gestureEnabled: true,
+          gestureDirection: 'horizontal',
           ...TransitionPresets.SlideFromRightIOS,
         }}
       />
     </Stack.Navigator>
   );
 };
+
 export default Router;

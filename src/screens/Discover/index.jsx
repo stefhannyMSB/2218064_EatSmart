@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import {
   StyleSheet,
   Text,
@@ -8,15 +8,16 @@ import {
   TouchableOpacity,
   TextInput,
   TouchableWithoutFeedback,
+  ScrollView,
 } from 'react-native';
 import { SearchNormal1 } from 'iconsax-react-native';
-import { BlogList } from '../../data';
 import { ItemSmall } from '../../components';
 import { fontType, colors } from '../../theme';
 import { useNavigation } from '@react-navigation/native';
+import axios from 'axios';
 
 const tags = ['Rekomendasi', 'Diet Sehat', 'Flu', 'Batuk'];
-const recentSearches = ['Diet sehat', 'Resep Sehat', 'Manfaat Buah', 'Tips Olahraga']; // Pindahkan ke sini
+const recentSearches = ['Diet sehat', 'Resep Sehat', 'Manfaat Buah', 'Tips Olahraga'];
 
 const FlatListRecent = () => (
   <FlatList
@@ -36,7 +37,7 @@ const FlatListRecent = () => (
 
 const Discover = () => {
   const navigation = useNavigation();
-  const recentBlog = BlogList.slice(5);
+  const [blogs, setBlogs] = useState([]);
 
   const scrollY = useRef(new Animated.Value(0)).current;
   const diffClampY = Animated.diffClamp(scrollY, 0, 100);
@@ -45,6 +46,24 @@ const Discover = () => {
     outputRange: [0, -100],
     extrapolate: 'clamp',
   });
+
+  // Fetch data dari API saat komponen mount
+  useEffect(() => {
+    fetchBlogs();
+  }, []);
+
+  const fetchBlogs = async () => {
+  try {
+    const response = await axios.get('https://683d6909199a0039e9e55a0c.mockapi.io/api/blog');
+    console.log('API Response:', response.data); // Tambahkan baris ini
+    setBlogs(response.data);
+  } catch (error) {
+    console.error('Error fetching blogs:', error);
+  }
+};
+
+  // Ambil beberapa artikel terbaru, misal 5 teratas
+  const recentBlog = blogs.slice(0, 5);
 
   return (
     <View style={styles.container}>
@@ -88,9 +107,11 @@ const Discover = () => {
 
         <Text style={styles.sectionTitle}>Artikel Terbaru</Text>
         <View style={styles.blogList}>
-          {recentBlog.map((item, index) => (
-            <ItemSmall item={item} key={index} />
-          ))}
+          {recentBlog.length === 0 ? (
+            <Text style={{ textAlign: 'center', color: colors.grey(0.7) }}>Loading...</Text>
+          ) : (
+            recentBlog.map((item, index) => <ItemSmall item={item} key={index} />)
+          )}
         </View>
       </Animated.ScrollView>
     </View>

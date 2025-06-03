@@ -5,19 +5,18 @@ import {
   Text,
   View,
   TouchableOpacity,
+  Image, 
 } from 'react-native';
-import {Setting2, Edit} from 'iconsax-react-native'; // digabung
-import FastImage from '@d11/react-native-fast-image';
+import {Setting2, Edit} from 'iconsax-react-native'; 
 import {BlogList} from '../../data';
 import {ItemSmall} from '../../components';
 import {fontType, colors} from '../../theme';
-import {useNavigation} from '@react-navigation/native'; // tidak perlu diubah
+import {useNavigation} from '@react-navigation/native'; 
 
 const data = BlogList.slice(5);
 
 const Profile = () => {
-  const navigation = useNavigation(); // dipindah ke atas return
-
+  const navigation = useNavigation(); 
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -26,21 +25,16 @@ const Profile = () => {
         <Setting2 color={colors.black()} variant="Linear" size={24} />
       </View>
 
-      {/* Content */}
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}>
-
-        {/* Profile Card */}
         <View style={styles.profileCard}>
-          <FastImage
+          <Image
             style={styles.pic}
             source={{
               uri: 'https://png.pngtree.com/png-clipart/20221012/original/pngtree-doctor-woman-dokter-perempuan-indonesia-wanita-png-image_8679062.png',
-              headers: {Authorization: 'someAuthToken'},
-              priority: FastImage.priority.high,
             }}
-            resizeMode={FastImage.resizeMode.cover}
+            resizeMode="cover"
           />
           <View style={styles.textCenter}>
             <Text style={styles.welcome}>Welcome</Text>
@@ -71,8 +65,6 @@ const Profile = () => {
 
 export default Profile;
 
-
-// Styles
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -153,8 +145,6 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.3,
     shadowRadius: 4.65,
-
     elevation: 8,
   },
-
 });
